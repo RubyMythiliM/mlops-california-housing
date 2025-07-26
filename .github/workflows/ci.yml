@@ -1,0 +1,35 @@
+name: CI Pipeline
+
+on: [push]
+
+jobs:
+  build_and_test_container:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Train Model
+        run: python train.py
+
+      - name: Build Docker Image
+        run: docker build -t mlops-california-housing .
+
+      - name: Run Docker Container
+        run: docker run mlops-california-housing
+
+      - name: Push to Docker Hub
+        run: |
+          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+          docker tag mlops-california-housing ${{ secrets.DOCKER_USERNAME }}/mlops-california-housing:latest
+          docker push ${{ secrets.DOCKER_USERNAME }}/mlops-california-housing:latest
